@@ -6,7 +6,13 @@
 package sha1;
 
 import com.sun.xml.internal.ws.util.StringUtils;
+import java.io.UnsupportedEncodingException;
 import static java.lang.Math.pow;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import static javax.management.Query.value;
+import static javax.management.Query.value;
 
 
 /**
@@ -29,6 +35,7 @@ public class SHA1 {
     {
         
         byte [] bytes = message.getBytes();
+        message="";
         
         for (Byte b:bytes){
             
@@ -60,10 +67,10 @@ public class SHA1 {
             PaddingParam += "0";
         }
 
-        
+         
         message = message + PaddingParam + Lparam;
         
-        System.out.println(message.length());
+       
         
         X = new Integer[20];
         String temp ="";
@@ -71,14 +78,17 @@ public class SHA1 {
         for (int i=0; i<message.length(); i++)
         {   
              if (i%32 == 0 && i!=0){
+                
+               
+                X[k] = Integer.parseInt(temp, 2);
                 temp = ""; 
-                X[i] = Integer.parseInt(temp, 2);
                 k++;
              }
              
             temp += message.charAt(i);
         }
         
+        X[15] = Integer.parseInt(temp, 2);
         X[16] = Integer.rotateLeft(X[0] ^ X[2] ^ X[8] ^ X[13], 1);
         X[17] = Integer.rotateLeft(X[1] ^ X[3] ^ X[9] ^ X[14], 1);
         X[18] = Integer.rotateLeft(X[2] ^ X[4] ^ X[10] ^ X[15], 1);
@@ -86,6 +96,7 @@ public class SHA1 {
        
         IVV = new Integer[5];
         
+        Compression();
         
     }
     
@@ -106,6 +117,8 @@ public class SHA1 {
     
     static void Compression ()
     {
+        Integer[] Last = new Integer[5];
+        
         for (int j=0; j<4; j++)
         {
             for (int i=0; i<20; i++)
@@ -125,26 +138,46 @@ public class SHA1 {
                 IVV = temp;
             }
             
+            if (j !=3)
+                Last = IVV;
+            
             for (int i=0; i<20; i++)
             {
                 X[i] = Integer.rotateLeft(X[4] ^ X[6] ^ X[12] ^ X[17], 1);
-            }
-            
+            }            
         }
+        
+        for (int i=0; i<5; i++)
+            IVV[i] = IVV[i] + IV[i]  % (int)pow(2, 0x20);
+    }
+    
+    static String hash()
+    {
+        String res = "";
+        for (int i=0; i<5; i++)
+        {
+            String temp = "";
+            for (int j=0; j< 32-Integer.toBinaryString(IVV[i]).length(); j++)
+                temp = "0" + temp;
+            res += (temp + Integer.toBinaryString(IVV[i]));
+        }
+        return res;
     }
     
     
     
-    
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         
-        //SHA1 hash = new SHA1("aaaaaaaaaaaaaaaaaaaaaaaa");
+        SHA1 h = new SHA1("a");
         
-        Integer[] a = {1, 2, 3, 4, 5};
-        Integer[] b = a;
-        a[1] = 6;
-        System.out.println(b[0]);
+        String test = h.hash();
+        System.out.println(new BigInteger(test, 2).toString(16));
         
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+	        digest.reset();
+	        digest.update("a".getBytes("utf8"));
+	        String sha1 = String.format("%040x", new BigInteger(1, digest.digest()));
+        System.out.println(sha1);
     }
     
 }
