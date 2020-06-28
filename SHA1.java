@@ -48,6 +48,8 @@ public class SHA1 {
             
         }
         
+        //System.out.println(message);
+        
         
         
         MessageLenght = message.length();
@@ -70,34 +72,58 @@ public class SHA1 {
          
         message = message + PaddingParam + Lparam;
         
-       
-        
-        X = new Integer[20];
-        String temp ="";
-        int k=0;
-        for (int i=0; i<message.length(); i++)
-        {   
-             if (i%32 == 0 && i!=0){
-                
-               
-                X[k] = Integer.parseInt(temp, 2);
-                temp = ""; 
-                k++;
-             }
-             
-            temp += message.charAt(i);
-        }
-        
-        X[15] = Integer.parseInt(temp, 2);
-        X[16] = Integer.rotateLeft(X[0] ^ X[2] ^ X[8] ^ X[13], 1);
-        X[17] = Integer.rotateLeft(X[1] ^ X[3] ^ X[9] ^ X[14], 1);
-        X[18] = Integer.rotateLeft(X[2] ^ X[4] ^ X[10] ^ X[15], 1);
-        X[19] = Integer.rotateLeft(X[3] ^ X[5] ^ X[11] ^ X[16], 1);
-       
         IVV = new Integer[5];
+        Integer[] Last = new Integer[5];
+        Last = IV;
+        String CopyMessage;
+        int m=0;
+        String tempp ="";
         
-        Compression();
+        System.out.println(message.length());
+            
         
+        for (int j=0; j<message.length(); j++)
+        {
+            
+            tempp += message.charAt(j);
+            
+            if (j%512 == 511 && j!=0)
+            {
+                CopyMessage = tempp;
+                tempp = "";
+                
+                
+                X = new Integer[20];
+                String temp ="";
+                int k=0;
+                for (int i=0; i<CopyMessage.length(); i++)
+                {   
+                     if (i%32 == 0 && i!=0){
+
+                        X[k] = Integer.parseInt(temp, 2);
+
+                        temp = ""; 
+                        k++;
+                     }
+
+                    temp += CopyMessage.charAt(i);
+                }
+
+                X[15] = Integer.parseInt(temp, 2);
+                //System.out.println(X[15]);
+                X[16] = Integer.rotateLeft(X[0] ^ X[2] ^ X[8] ^ X[13], 1);
+                X[17] = Integer.rotateLeft(X[1] ^ X[3] ^ X[9] ^ X[14], 1);
+                X[18] = Integer.rotateLeft(X[2] ^ X[4] ^ X[10] ^ X[15], 1);
+                X[19] = Integer.rotateLeft(X[3] ^ X[5] ^ X[11] ^ X[16], 1);
+
+               
+
+                Last = Compression(Last);
+            }
+            
+            IVV = Last;
+    
+        }
     }
     
     static Integer function (int n){
@@ -115,16 +141,15 @@ public class SHA1 {
     }
     
     
-    static void Compression ()
-    {
-        Integer[] Last = new Integer[5];
+    static Integer[] Compression (Integer[] Last)
+    { 
+        IVV = Last;
         
         for (int j=0; j<4; j++)
         {
             for (int i=0; i<20; i++)
             {
                 Integer[] temp = new Integer[5];
-                IVV = IV;
                 temp[4] = IVV[3];
                 temp[3] = IVV[2];
                 temp[1] = IVV[0];
@@ -138,17 +163,17 @@ public class SHA1 {
                 IVV = temp;
             }
             
-            if (j !=3)
-                Last = IVV;
-            
+           
             for (int i=0; i<20; i++)
             {
-                X[i] = Integer.rotateLeft(X[4] ^ X[6] ^ X[12] ^ X[17], 1);
+                X[i] = Integer.rotateLeft(X[(4+i)%20] ^ X[(6+i)%20] ^ X[(12+i)%20] ^ X[(17+i)%20], 1);
             }            
         }
         
         for (int i=0; i<5; i++)
-            IVV[i] = IVV[i] + IV[i]  % (int)pow(2, 0x20);
+            IVV[i] = IVV[i] + Last[i]  % (int)pow(2, 0x20);
+                    
+        return IVV;
     }
     
     static String hash()
@@ -168,14 +193,14 @@ public class SHA1 {
     
     public static void main(String[] args) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         
-        SHA1 h = new SHA1("a");
+        SHA1 h = new SHA1("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         
         String test = h.hash();
         System.out.println(new BigInteger(test, 2).toString(16));
         
         MessageDigest digest = MessageDigest.getInstance("SHA-1");
 	        digest.reset();
-	        digest.update("a".getBytes("utf8"));
+	        digest.update("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".getBytes("utf8"));
 	        String sha1 = String.format("%040x", new BigInteger(1, digest.digest()));
         System.out.println(sha1);
     }
